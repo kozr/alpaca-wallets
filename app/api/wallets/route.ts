@@ -23,7 +23,6 @@ export async function GET(req: NextRequest) {
             const solResponse = await sdk.wallet.getBalance({ wallet });
             tokens.push({ 'Solana': solResponse });
             map[wallet] = tokens;
-            await new Promise((resolve) => setTimeout(resolve, 50));
         }
 
         return NextResponse.json(map);
