@@ -25,11 +25,8 @@ export async function GET(req: NextRequest) {
             map[wallet] = tokens;
             
             sdkIndex = (sdkIndex + 1) % 5; // Increment sdkIndex at the start or end, but before the if check
-        
-            // Delay after every 5th request, starting after the first set of 5.
-            if (sdkIndex === 0) {
-                await new Promise((resolve) => setTimeout(resolve, 500));
-            }
+
+            await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
         return NextResponse.json(map);
