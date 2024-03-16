@@ -1,24 +1,30 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { ShyftSdk, Network } from '@shyft-to/js';
 
+const KEYS = [process.env.SHYFT_API_KEY_1, process.env.SHYFT_API_KEY_2, process.env.SHYFT_API_KEY_3, process.env.SHYFT_API_KEY_4, process.env.SHYFT_API_KEY_5];
+
 export async function GET(req: NextRequest) {
     const addresses = req.nextUrl.searchParams.get('addresses');
     if (!addresses) {
         return NextResponse.json({ error: 'No addresses provided' }, { status: 400 });
     }
     
-    const sdk = new ShyftSdk({ network: Network.Mainnet, apiKey: process.env.SHYFT_API_KEY });
+    const sdks = KEYS.map((key) => new ShyftSdk({ network: Network.Mainnet, apiKey: key }));
     const wallets = addresses.split(',');
     
     try {
         const map = {};
-        await Promise.all(wallets.map(async (wallet) => {
+        // avoid rate limit by spacing out requests
+        let sdkIndex = 0;
+        for (const wallet of wallets) {
+            const sdk = sdks[sdkIndex];
             const response = await sdk.wallet.getAllTokenBalance({ wallet });
             const tokens = response.map((token) => ({ [token.info.name]: token.balance }));
             const solResponse = await sdk.wallet.getBalance({ wallet });
             tokens.push({ 'Solana': solResponse });
             map[wallet] = tokens;
-        }))
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
 
         return NextResponse.json(map);
     } catch (error) {
