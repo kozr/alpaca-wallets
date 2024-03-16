@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'No addresses provided' }, { status: 400 });
     }
     
-    const sdks = KEYS.map((key) => new ShyftSdk({ network: Network.Devnet, apiKey: key }));
+    const sdks = KEYS.map((key) => new ShyftSdk({ network: Network.Mainnet, apiKey: key }));
     const wallets = addresses.split(',');
     
     try {
