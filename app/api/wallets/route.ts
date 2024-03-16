@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
         await Promise.all(wallets.map(async (wallet) => {
             const response = await sdk.wallet.getAllTokenBalance({ wallet });
             const tokens = response.map((token) => ({ [token.info.name]: token.balance }));
+            const solResponse = await sdk.wallet.getBalance({ wallet });
+            tokens.push({ 'Solana': solResponse });
             map[wallet] = tokens;
         }))
 
