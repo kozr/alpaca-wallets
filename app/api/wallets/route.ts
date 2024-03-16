@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
             if (sdkIndex % 5 === 0  && sdkIndex !== 0) {
                 await new Promise((resolve) => setTimeout(resolve, 1000));
             }
+            sdkIndex++;
         }
 
         return NextResponse.json(map);
