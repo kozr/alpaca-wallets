@@ -3,6 +3,15 @@ import { ShyftSdk, Network } from '@shyft-to/js';
 
 const KEYS = [process.env.SHYFT_API_KEY_1, process.env.SHYFT_API_KEY_2, process.env.SHYFT_API_KEY_3, process.env.SHYFT_API_KEY_4, process.env.SHYFT_API_KEY_5];
 
+async function handleSdkCalls(wallet, sdk) {
+    const response = await sdk.wallet.getAllTokenBalance({ wallet });
+    const tokens = response.map((token) => ({ [token.info.name]: token.balance }));
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay between calls
+    const solResponse = await sdk.wallet.getBalance({ wallet });
+    tokens.push({ 'Solana': solResponse });
+    return { [wallet]: tokens };
+}
+
 export async function GET(req: NextRequest) {
     const addresses = req.nextUrl.searchParams.get('addresses');
     if (!addresses) {
@@ -13,22 +22,20 @@ export async function GET(req: NextRequest) {
     const wallets = addresses.split(',');
     
     try {
-        const map = {};
-        // avoid rate limit by spacing out requests
         let sdkIndex = 0;
+        const results = [];
         for (const wallet of wallets) {
-            const sdk = sdks[sdkIndex];
-            const response = await sdk.wallet.getAllTokenBalance({ wallet });
-            await new Promise((resolve) => setTimeout(resolve, 200));
-            const tokens = response.map((token) => ({ [token.info.name]: token.balance }));
-            const solResponse = await sdk.wallet.getBalance({ wallet });
-            tokens.push({ 'Solana': solResponse });
-            map[wallet] = tokens;
-            
-            sdkIndex = (sdkIndex + 1) % 5; // Increment sdkIndex at the start or end, but before the if check
+            const sdk = sdks[sdkIndex % sdks.length];
+            results.push(handleSdkCalls(wallet, sdk));
 
+            if (sdkIndex % sdks.length === sdks.length - 1) {
+                // After the last SDK is used, wait 1 second before the next cycle
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+            sdkIndex++;
         }
 
+        const map = Object.assign({}, ...(await Promise.all(results)));
         return NextResponse.json(map);
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
