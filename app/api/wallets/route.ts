@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'No addresses provided' }, { status: 400 });
     }
     
-    const sdks = KEYS.map((key) => new ShyftSdk({ network: Network.Mainnet, apiKey: key }));
+    const sdks = KEYS.map((key) => new ShyftSdk({ network: Network.Devnet, apiKey: key }));
     const wallets = addresses.split(',');
     
     try {
@@ -23,10 +23,13 @@ export async function GET(req: NextRequest) {
             const solResponse = await sdk.wallet.getBalance({ wallet });
             tokens.push({ 'Solana': solResponse });
             map[wallet] = tokens;
-            if (sdkIndex % 5 === 0  && sdkIndex !== 0) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+            
+            sdkIndex = (sdkIndex + 1) % 5; // Increment sdkIndex at the start or end, but before the if check
+        
+            // Delay after every 5th request, starting after the first set of 5.
+            if (sdkIndex === 0) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
             }
-            sdkIndex++;
         }
 
         return NextResponse.json(map);
