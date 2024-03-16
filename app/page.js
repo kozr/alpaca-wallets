@@ -1,10 +1,28 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function Home() {
   const [wallets, setWallets] = useState([]);
   const [walletMap, setWalletMap] = useState({});
+  const [summary, setSummary] = useState({});
+
+  useEffect(() => {
+    // sum all the subwallets
+    const summary = {};
+    Object.keys(walletMap).forEach((wallet) => {
+      Object.keys(walletMap[wallet]).forEach((subwallet) => {
+        Object.keys(walletMap[wallet][subwallet]).forEach((name) => {
+          if (summary[name]) {
+            summary[name] += walletMap[wallet][subwallet][name]
+          } else {
+            summary[name] = walletMap[wallet][subwallet][name]
+          }
+        })
+      })
+    })
+    setSummary(summary);
+  }, [walletMap])
 
   const fetchWalletBalances = async () => {
     const response = await fetch(`/api/wallets?addresses=${wallets}`);
@@ -32,6 +50,15 @@ export default function Home() {
         >
           Fetch Balances
         </button>
+      </div>
+
+      <div>Summary
+        {/* alternate colors */}
+        {
+          Object.keys(summary).map((name, index) => (
+            <p key={name} className={index % 2 === 0 ? "bg-gray-100" : ""}>{name}: {summary[name]}</p>
+          ))
+        }
       </div>
     
       <div className="p-4 w-full text-md bg-gray-100 rounded-lg">
