@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         for (const wallet of wallets) {
             const sdk = sdks[sdkIndex];
             const response = await sdk.wallet.getAllTokenBalance({ wallet });
+            await new Promise((resolve) => setTimeout(resolve, 200));
             const tokens = response.map((token) => ({ [token.info.name]: token.balance }));
             const solResponse = await sdk.wallet.getBalance({ wallet });
             tokens.push({ 'Solana': solResponse });
@@ -26,7 +27,6 @@ export async function GET(req: NextRequest) {
             
             sdkIndex = (sdkIndex + 1) % 5; // Increment sdkIndex at the start or end, but before the if check
 
-            await new Promise((resolve) => setTimeout(resolve, 200));
         }
 
         return NextResponse.json(map);
